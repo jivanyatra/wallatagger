@@ -45,8 +45,8 @@ def test_tags():
     auth_body = gen_auth_body()
     base_url = gen_base_url()
     token = wallatagger.authenticate(base_url, auth_body)
-    page1 = "" #"http://example.com"
-    page2 = ""
+    page1 = "https://www.wired.com/story/at-age-50-microsoft-is-an-ai-giant-an-open-source-lover-and-bad-as-it-ever-was/" #"http://example.com"
+    page2 = "https://www.wired.com/story/the-ev-buyers-guide-to-an-uncertain-future/"
     r = load_page(page1, token)
     assert r.status_code == 200
     r = load_page(page2, token)
@@ -69,10 +69,11 @@ def test_tags():
     items = r.json()["_embedded"]["items"]
     content1 = items[0]["content"]
     content2 = items[1]["content"]
-    tags_string = wallatagger.parse_for_tags(content1, re.compile(r"regex"))
-    assert tags_string == ''
-    tags_string = wallatagger.parse_for_tags(content2, re.compile(r"regex"))
-    assert tags_string == ''
+    # https://www.wired.com/tag/electric-vehicles/
+    tags_string = wallatagger.parse_for_tags(content1, re.compile(r"wired\.com\/tag\/(.+?)\/"))
+    assert tags_string == 'antitrust,artificial-intelligence,longreads,microsoft,openai,satya-nadella'
+    tags_string = wallatagger.parse_for_tags(content2, re.compile(r"wired\.com\/tag\/(.+?)\/"))
+    assert tags_string == 'electric-vehicles,elon-musk,evs-and-hybrids,infrastructure,taxes,tesla'
     #r = requests.get()
 
     page = "url"

@@ -1,0 +1,8 @@
+# A modified file for wired.com article
+# this adds the tags section to the body.
+body: //div[contains(concat(' ',normalize-space(@class),' '),' ArticlePageContentBackGround-cNiFNN ')] | //div[contains(concat(' ',normalize-space(@class),' '),' TagCloudWrapper-gGgndx ')]
+strip: //button
+strip: //div[contains(@class, 'RecircMostPopularWrapper')]
+
+test_url: https://www.wired.com/story/tiktok-platforms-cory-doctorow/
+test_contains: they are good to their users

@@ -27,8 +27,8 @@ docker compose up -d
 # --mount type=bind,source=C:\absolute\path\to\folder,target=/var/www/wallabag/data
 # --mount type=bind,source=C:\absolute\path\to\folder,target=/var/www/wallabag/web/assets/images
 
-docker container cp ./fixtures/template.com.txt wallabag_test:/var/www/wallabag/vendor/j0k3r/graby-site-config/
-docker exec -it wallabag_test sh -c "chmod 644 /var/www/wallabag/vendor/j0k3r/graby-site-config/template.com.txt"
-docker exec -it wallabag_test sh -c "chown nobody:nobody /var/www/wallabag/vendor/j0k3r/graby-site-config/template.com.txt"
+docker container cp ./fixtures/wired.com.txt wallabag_test:/var/www/wallabag/vendor/j0k3r/graby-site-config/
+docker exec -it wallabag_test sh -c "chmod 644 /var/www/wallabag/vendor/j0k3r/graby-site-config/wired.com.txt"
+docker exec -it wallabag_test sh -c "chown nobody:nobody /var/www/wallabag/vendor/j0k3r/graby-site-config/wired.com.txt"
 
 # pipenv run pytest
