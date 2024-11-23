@@ -1,145 +1,44 @@
-## To Do
+# Wallatagger
 
-### ~~General Steps~~
-1. ~~Authenticate via env vars~~
-2. ~~Check for timestamp~~
-3. ~~Get articles up to time frame~~
-4. ~~Parse body for URL scheme (regex)~~
-5. ~~Make call to add tag to article for each tag~~
+Wallatagger is a tool that helps you automatically tag articles.
 
-### Improvements
-1. break out formatting tags string work into new func
-2. add flag to reprocess tags
-3. before updating tags, check if tags exist
-   1. if tags exist and reprocess == False, skip and log debug
-   2. if tags exist and reprocess == True, check if the strings are the same.
-      1. if they are the same, skip and log info
-      2. if they are different, update and log info
-4. if errors occur, set `new_ts` to before the earliest error
-5. log the errors and time at warning level
+## Use Case
 
-## Authenticate
+Suppose you are a [Wallabag](https://github.com/wallabag/wallabag) user.
 
-```
-http POST http://localhost:8000/oauth/v2/token \
-    grant_type=password \
-    client_id=1_3o53gl30vhgk0c8ks4cocww08o84448osgo40wgw4gwkoo8skc \
-    client_secret=636ocbqo978ckw0gsw4gcwwocg8044sco0w8w84cws48ggogs4 \
-    username=wallabag \
-    password=wallabag
+Suppose you bag articles from a website you frequent. Their articles have links to their own site tags in the body. You want to use those tags.
 
-You'll have this in return:
+Suppose you want to do it automatically.
 
-HTTP/1.1 200 OK
-Cache-Control: no-store, private
-Connection: close
-Content-Type: application/json
-Date: Tue, 05 Apr 2016 08:44:33 GMT
-Host: localhost:8000
-Pragma: no-cache
-X-Debug-Token: 19c8e0
-X-Debug-Token-Link: /_profiler/19c8e0
-X-Powered-By: PHP/7.0.4
+*Wallatagger has entered the chat.*
 
-{
-    "access_token": "ZGJmNTA2MDdmYTdmNWFiZjcxOWY3MWYyYzkyZDdlNWIzOTU4NWY3NTU1MDFjOTdhMTk2MGI3YjY1ZmI2NzM5MA",
-    "expires_in": 3600,
-    "refresh_token": "OTNlZGE5OTJjNWQwYzc2NDI5ZGE5MDg3ZTNjNmNkYTY0ZWZhZDVhNDBkZTc1ZTNiMmQ0MjQ0OThlNTFjNTQyMQ",
-    "scope": null,
-    "token_type": "bearer"
-}
-```
+## How It Works
 
-```
-h = {"Authorization": "Bearer {access_token}"}
-get /api/entries
-https://domain.com/api/entries?archive=0&starred=0&sort=created&order=desc&page=1&perPage=1&public=0&detail=full
-headers=h
+Wallatagger uses a [`.env`](.env.example) file. You fill it out, and then you set the Wallatagger container to run according to whatever frequency you want (either via SystemD, or Cron, or whatever).
 
-for item in response["items"]:
-    parse(item["content"])
-    entry = item["id"]
-    
-    post /api/entries/{entry}/tags
-    {"tags" : "tag1,tag2,tag3"}
-    
-regexpr = r"tags\.domain\.com\/(.+?)\/"
-get group from each match
-```
+It will then:
+1. use the API credentials to fetch all articles since the last timestamp
+1. parse the article body for the regex you specify
+1. grab the "capture group" out of the regex matches as tags
+1. dedupe the tags (only exact copies) and alphabetize them
+1. update the article via API to include those tags
+1. after processing all entries, it will update the timestamp
 
-## Timestamps
+You can specify the log level if you like.
 
-API expects timestamps as integers, even if it returns a datetime like object.
+## Caveats
 
-For manual testing, you can login to:
+This is very much a work in progress. Things might change pretty drastically - like variable names in the `.env` file for configuration, how logging works, how the regex capturing system works... Even the deployment via Docker may change.
 
-```
-https://domain.com/api/doc/
-```
+## License
 
-you want the `entries` endpoint. After authenticating, you can get an integer ts from [The Epoch Converter](https://www.epochconverter.com/)
+[MIT License](LICENSE), so the license file needs to be included (which, I guess, gives me some minimal attribution). Aside from that: do what you want with it, but you can't blame me for anything that happens.
 
-Test data:
+## Developer Stuff
 
-```
-Date and time (GMT): Thursday, April 4, 2024 12:00:01 AM
-Epoch timestamp: 1712188801
-```
+If you find problems, please feel free to open an issue and discuss. If you'd like to collaborate, please reach out! To grab my attention, feel free to use the subject line "Wallatagger COLLAB" and I'll try to get back to you ASAP. This project is fun and I have a personal need for it, but it's not a priority.
 
-datetime should be able to convert timestamps to integers
+I have specified some [Developer Notes](DEV_NOTES.md) that I gathered as a started the project.
 
-we can load timestamps as human-readable when necessary, but we prefer integer timestamps
-
-```
->>>datetime.datetime.fromtimestamp(1712188801)
-datetime.datetime(2024, 4, 3, 20, 0, 1)
->>>datetime.datetime.utcfromtimestamp(1712188801)
-datetime.datetime(2024, 4, 4, 0, 0, 1)
-
->>>datetime.datetime.fromisoformat("20240402")
-datetime.datetime(2024, 4, 2, 0, 0)
->>>datetime.datetime.fromisoformat("20240402T12:12:12")
-datetime.datetime(2024, 4, 2, 12, 12, 12)
-
->>>datetime.datetime.fromisoformat("20240402T12:12:12+0000")
-datetime.datetime(2024, 4, 2, 12, 12, 12, tzinfo=datetime.timezone.utc)
->>>datetime.datetime.fromisoformat("20240402T12:12:12+0000").toordinal()
-738978
->>>datetime.datetime.fromisoformat("20240402T12:12:12+0000").timestamp()
-1712059932.0
-
-need to use floor function there ^
-```
-
-
-## Adding entries
-
-yields:
-
-```
-
-```
-
-
-## Newest version issues
-
-Newest version in docker complains about "oauth required"
-
-DO NOT pass "Bearer {token}" as the "Authorization" header!! This only works for the doc page
-
-Instead, send "access_token" key, value in body:
-* requests.post -> gets passed in the data dict
-* requests.get -> gets passed in params dicts
-* NO USING `headers`
-
-## Tests
-
-___NEED to inject site template for parsing pages!!___
-
-1. run tests/docker_test_runner.sh
-1. default user/pass = `wallabag/wallabag`
-1. client_id = `1_4j4oh4xqini8ckkgwssso0s8kc4kscw88w0swkos88cw0skg0o`
-1. client_secret = `3vpq4a624feogowwwocc04wswgggk80o8ccw0wcgossk0s4cc`
-1. use api to load a page, run tests...
-1. using `pytest` with a runner to the tests "script" in PyCharm
-1. using runner for "script" to test as well
+Some weird things to note:
+* TODO
