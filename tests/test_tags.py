@@ -1,6 +1,9 @@
-from pprint import pprint as pp
-from src import wallatagger
-import re, requests
+# from pprint import pprint as pp
+#from src 
+import wallatagger
+import re
+import requests
+print(dir(wallatagger))
 
 
 def gen_auth_body():
@@ -10,6 +13,8 @@ def gen_auth_body():
         "password": "wallabag",
         "client_id": "1_65zthm9gtdkw4oo8swsg4848sowwwk8ck8s0wk4gs4kc0swwks",
         "client_secret": "4i3tykbjwf408g008ocg48koos8ckskc04sosw4go04ksgo4k0",
+        #"client_id": "1_5dnifffgieckk4080gcs88og0g4gsgc84g4k0wcc44wsogg408",
+        #"client_secret": "1boh10kal3nooc4ww8o4wgkg8oc88w4kw0soswcocgg4so4ws0",
     }
     return auth_body
 
@@ -42,6 +47,7 @@ def load_page(page, token):
 
 
 def test_tags():
+    print(dir(wallatagger))
     auth_body = gen_auth_body()
     base_url = gen_base_url()
     token = wallatagger.authenticate(base_url, auth_body)
@@ -70,9 +76,9 @@ def test_tags():
     content1 = items[0]["content"]
     content2 = items[1]["content"]
     # https://www.wired.com/tag/electric-vehicles/
-    tags_string = wallatagger.parse_for_tags(content1, re.compile(r"wired\.com\/tag\/(.+?)\/"))
+    tags_string = wallatagger.parse_for_tags(content1, re.compile(r"wired\.com\/tag\/(.+?)[\"\/]"))
     assert tags_string == 'antitrust,artificial-intelligence,longreads,microsoft,openai,satya-nadella'
-    tags_string = wallatagger.parse_for_tags(content2, re.compile(r"wired\.com\/tag\/(.+?)\/"))
+    tags_string = wallatagger.parse_for_tags(content2, re.compile(r"wired\.com\/tag\/(.+?)[\"\/]"))
     assert tags_string == 'electric-vehicles,elon-musk,evs-and-hybrids,infrastructure,taxes,tesla'
     #r = requests.get()
 
