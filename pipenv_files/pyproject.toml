@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wallatagger"
+authors = [
+    {name = "Yatri Trivedi", email = "jivanyatra@gmail.com"},
+]
+description = "Tag wallabag articles by parsing content for regexp"
+requires-python = ">=3.11"
+keywords = ["articles", "regex", "tagging", "wallabag"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+	"Topic :: Text Processing :: General",
+    "Natural Language :: English",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = ["loguru", "python-dotenv", "requests"]
+dynamic = ["readme", "version"]
+license = {file = "LICENSE"}
+
+[tool.setuptools]
+packages = ["wallatagger"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+version = {attr = "wallatagger.__version__"}
+
+[project.urls]
+Homepage = "https://github.com/jivanyatra/wallatagger/"
+Issues = "https://github.com/jivanyatra/wallatagger/issues"
+
+[pytest]
+testpaths = ["tests"]
