@@ -16,10 +16,12 @@ fi
 if [ ! -f "./data/db/wallabag.sqlite" ]; then
   cp ./fixtures/testdb/wallabag.sqlite ./data/db/
   cp ./fixtures/site-credentials-secret-key.txt ./data/
+  chmod -R nobody:nogroup ./data/
 fi
 
 if [ ! -d "./images" ]; then
   mkdir ./images
+  chmod -R nobody:nogroup ./images
 fi
 
 # using compose instead of docker run command now, cmd here for ref
