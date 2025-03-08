@@ -120,9 +120,12 @@ def test_tags():
     token = wallatagger.authenticate(base_url, auth_body)
     page1 = "https://www.wired.com/story/nokia-4g-network-on-the-moon/"  # "http://example.com"
     page2 = "https://www.wired.com/story/the-ev-buyers-guide-to-an-uncertain-future/"
+    page3 = "https://www.wired.com/story/at-age-50-microsoft-is-an-ai-giant-an-open-source-lover-and-bad-as-it-ever-was/"
     r = load_page(page1, token)
     assert r.status_code == 200
     r = load_page(page2, token)
+    assert r.status_code == 200
+    r = load_page(page3, token)
     assert r.status_code == 200
     old_ts = 0
     """
@@ -142,6 +145,7 @@ def test_tags():
     items = r.json()["_embedded"]["items"]
     content1 = items[0]["content"]
     content2 = items[1]["content"]
+    content3 = items[2]["content"]
     # https://www.wired.com/tag/electric-vehicles/
     tags_string = wallatagger.parse_for_tags(
         content1, re.compile(r"wired\.com\/tag\/(.+?)[\"\/]")
@@ -157,7 +161,13 @@ def test_tags():
         tags_string
         == "electric-vehicles,elon-musk,evs-and-hybrids,infrastructure,taxes,tesla"
     )
-    # r = requests.get()
+    tags_string = wallatagger.parse_for_tags(
+        content3, re.compile(r"wired\.com\/tag\/(.+?)[\"\/]")
+    )
+    assert (
+        tags_string
+        == "antitrust,artificial-intelligence,longreads,microsoft,openai,satya-nadella"
+    )
 
     page = "url"
     r = load_page(page, token)
