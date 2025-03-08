@@ -42,6 +42,9 @@ docker exec -it wallabag_test sh -c "chmod 644 /var/www/wallabag/vendor/j0k3r/gr
 # change ownership of copied file inside the container
 docker exec -it wallabag_test sh -c "chown nobody:nobody /var/www/wallabag/vendor/j0k3r/graby-site-config/wired.com.txt"
 
+# wait for docker container to become available
+sleep 4
+
 # run tests
 # pipenv run pytest
 uv run pytest
