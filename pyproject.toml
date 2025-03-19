@@ -11,10 +11,16 @@ dependencies = [
     "requests>=2.32.3",
 ]
 license = {file = "LICENSE"}
+classifiers = [
+    "Private :: Do Not Upload",
+]
 
 [project.urls]
 Homepage = "https://github.com/jivanyatra/wallatagger/"
 Issues = "https://github.com/jivanyatra/wallatagger/issues"
+
+[project.scripts]
+wallatagger = "wallatagger:main"
 
 [tool.uv]
 dev-dependencies = [
