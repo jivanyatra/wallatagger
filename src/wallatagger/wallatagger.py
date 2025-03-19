@@ -9,9 +9,6 @@ import requests
 import sys
 
 
-__version__ = "0.0.1"
-
-
 log_level = "INFO"
 log_path = "wallatagger.log"
 
