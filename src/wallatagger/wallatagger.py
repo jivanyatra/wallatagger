@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+
 # noinspection PyPackageRequirements
 from dotenv import find_dotenv, load_dotenv, set_key
 from loguru import logger
@@ -73,8 +74,8 @@ def get_last_timestamp():
     sync_ts = os.getenv("LAST_SYNC_TS")
     logger.debug(f"Last timestamp loaded from env: {sync_ts = }")
     if not sync_ts:
-        logger.warning(f"No last synced timestamp!")
-        logger.warning(f"This will process the entire backlog. This may take a while...")
+        logger.warning("No last synced timestamp!")
+        logger.warning("This will process the entire backlog. This may take a while...")
         return 0
     # check for iso-assumable format
     if "T" in sync_ts:
@@ -83,7 +84,7 @@ def get_last_timestamp():
         logger.debug(f"Inferring TimeZone Data: {ts} (Unix Epoch: {secs})")
         return secs
     else:  # assume Unix Epoch and convert to integer
-        logger.debug(f"Assuming Unix Epoch, as required")
+        logger.debug("Assuming Unix Epoch, as required")
         return int(sync_ts)
 
 
@@ -116,7 +117,7 @@ def get_entries_list(base_url, auth_dict, last_timestamp):
         "order": "asc",
         "page": "1",
         "perPage": "100",
-        "since": last_timestamp
+        "since": last_timestamp,
     }
     params.update(auth_dict)
     resp = requests.get(base_url + "/api/entries", params=params)
@@ -129,7 +130,7 @@ def get_entries_list(base_url, auth_dict, last_timestamp):
 
 def get_entry_tags(entry_tags):
     if len(entry_tags) == 0:
-        logger.debug(f"no existing tags")
+        logger.debug("no existing tags")
         return ""
     tags_list = []
     for tag in entry_tags:
@@ -152,25 +153,27 @@ def parse_for_tags(entry_content, re_pattern):
 
 
 def update_entry_tags(base_url, auth_dict, entry, tags) -> bool:
-    data = {
-        "tags": tags
-    }
+    data = {"tags": tags}
     data.update(auth_dict)
     try:
         resp = requests.post(base_url + f"/api/entries/{entry}/tags", data=data)
     except Exception as update_error:
-        logger.error(f"Failed to update {entry = } ; Exception occurred: {update_error}")
+        logger.error(
+            f"Failed to update {entry = } ; Exception occurred: {update_error}"
+        )
         return False
 
     if resp.status_code == 200:
         logger.debug(f"Updated {entry = } ; {resp.status_code}")
         return True
     else:
-        logger.error(f"Failed to update {entry = } ; {resp.status_code = }, {resp.content}")
+        logger.error(
+            f"Failed to update {entry = } ; {resp.status_code = }, {resp.content}"
+        )
         return False
 
 
-def process_entries(base_url, headers, unprocessed_entries, re_pattern):
+def process_entries(base_url, headers, unprocessed_entries, reprocess_flag, re_pattern):
     logger.debug(f"Using regex pattern: '{re_pattern}'")
     skips = 0
     successes = 0
@@ -187,7 +190,9 @@ def process_entries(base_url, headers, unprocessed_entries, re_pattern):
             continue
         tags_list = parse_for_tags(page_content, re_pattern)
         if reprocess_flag and tags == tags_list:
-            logger.debug(f"Reprocessing but {entry_id = } doesn't have changes to {tags = }; skipping")
+            logger.debug(
+                f"Reprocessing but {entry_id = } doesn't have changes to {tags = }; skipping"
+            )
             skips += 1
             continue
 
@@ -197,10 +202,12 @@ def process_entries(base_url, headers, unprocessed_entries, re_pattern):
             successes += 1
         else:
             failures += 1
-    logger.info(f"processed {len(unprocessed_entries)} entries; {successes = }, {failures = }, {skips = }")
+    logger.info(
+        f"processed {len(unprocessed_entries)} entries; {successes = }, {failures = }, {skips = }"
+    )
 
 
-if __name__ == "__main__":
+def main():
     creds, server_url = load_env_vars()
     # noinspection PyArgumentList
     logger.add(log_path, level=log_level)
@@ -211,9 +218,7 @@ if __name__ == "__main__":
     old_ts = get_last_timestamp()
     logger.info(f"old timestamp {old_ts}")
     auth_token = authenticate(server_url, creds)
-    auth_key = {
-        "access_token": auth_token
-    }
+    auth_key = {"access_token": auth_token}
     entries_list = []
     try:
         entries_list = get_entries_list(server_url, auth_key, old_ts)
@@ -228,6 +233,10 @@ if __name__ == "__main__":
             sys.exit(0)
     pattern = get_parsing_pattern()
     reprocess_flag = get_reprocess_flag()
-    process_entries(server_url, auth_key, entries_list, pattern)
+    process_entries(server_url, auth_key, entries_list, reprocess_flag, pattern)
     set_new_timestamp(new_ts)
     logger.info(f"Set new timestamp {new_ts} ; Exiting...")
+
+
+if __name__ == "__main__":
+    main()
