@@ -43,6 +43,18 @@ I have specified some [Developer Notes](DEV_NOTES.md) that I gathered as a start
 Some weird things to note:
 * TODO
 
+Build command:
+```
+docker build -t wallatagger:0.1.1 --no-cache .
+```
+
+Single run command:
+```
+docker run --rm -it --env-file .env --network=host --entrypoint /bin/sh wallatagger:0.1.1
+```
+
+Assuming wallabag instance is running in another container somewhere...
+
 ### TO DO:
 
 1. When checking for existing tags, make sure that out of the set of scraped tags, each one is present in the set of existing tags. Only then skip. Right now, if extra tags are present on an article, it will reparse and update tags because the strings don't match.
