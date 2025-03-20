@@ -16,6 +16,10 @@ COPY ./uv.lock /app/uv.lock
 ENV UV_PROJECT_ENVIRONMENT="/usr/local/"
 RUN uv sync --locked --no-dev
 
-COPY . /app
+COPY ./dist/wallatagger-0.1.1-py3-none-any.whl /app
+RUN uv pip install --system ./wallatagger-0.1.1-py3-none-any.whl
 
+COPY ./entrypoint.sh /app
 # figure out crontab/ crond/ tail log
+ENTRYPOINT ["wallatagger"]
+#ENTRYPOINT ["/app/entrypoint.sh"]
