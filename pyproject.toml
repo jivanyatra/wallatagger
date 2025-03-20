@@ -20,12 +20,13 @@ Homepage = "https://github.com/jivanyatra/wallatagger/"
 Issues = "https://github.com/jivanyatra/wallatagger/issues"
 
 [project.scripts]
-wallatagger = "wallatagger:main"
+wallatagger = "wallatagger.wallatagger:main"
 
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.3.3",
 ]
+package = true
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
