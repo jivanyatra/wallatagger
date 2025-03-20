@@ -42,3 +42,8 @@ I have specified some [Developer Notes](DEV_NOTES.md) that I gathered as a start
 
 Some weird things to note:
 * TODO
+
+### TO DO:
+
+1. When checking for existing tags, make sure that out of the set of scraped tags, each one is present in the set of existing tags. Only then skip. Right now, if extra tags are present on an article, it will reparse and update tags because the strings don't match.
+1. Figure out pagination!
