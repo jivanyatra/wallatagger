@@ -58,6 +58,6 @@ Assuming wallabag instance is running in another container somewhere...
 ### TO DO:
 
 1. When checking for existing tags, make sure that out of the set of scraped tags, each one is present in the set of existing tags. Only then skip. Right now, if extra tags are present on an article, it will reparse and update tags because the strings don't match.
-1. Figure out pagination!
+1. ~~Figure out pagination!~~
 1. Add a function to only regrab if it's not a 404! Wallabag doesn't do this SMH
 1. Change the storage of config from environment vars to config file; docker won't write env vars back to the outside env.
