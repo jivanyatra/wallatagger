@@ -120,6 +120,30 @@ yields:
 
 ```
 
+## Pagination
+
+```
+resp.json()["_links"] -> {
+    "self": {
+        "href": "http://127.0.0.1:8080/api/entries?archive=0&starred=0&public=0&sort=created&order=desc&tags=&since=0&detail=full&page=1&perPage=100"
+    },
+    "first": {
+        "href": "http://127.0.0.1:8080/api/entries?archive=0&starred=0&public=0&sort=created&order=desc&tags=&since=0&detail=full&page=1&perPage=100"
+    },
+    "last": {
+        "href": "http://127.0.0.1:8080/api/entries?archive=0&starred=0&public=0&sort=created&order=desc&tags=&since=0&detail=full&page=48&perPage=100"
+    },
+    "previous": {
+        "href": "http://127.0.0.1:8080/api/entries?archive=0&starred=0&public=0&sort=created&order=desc&tags=&since=0&detail=full&page=47&perPage=100"
+    },
+    ^^ previous only exists if there's a previous page! if not, it's not there. first page doesn't have a previous entry.
+    "next": {
+        "href": "http://127.0.0.1:8080/api/entries?archive=0&starred=0&public=0&sort=created&order=desc&tags=&since=0&detail=full&page=2&perPage=100"
+    },
+    ^^ next only exists if there's a next page! if not, it's not there. last page doesn't have a next entry.
+}
+```
+
 
 ## Newest version issues
 
