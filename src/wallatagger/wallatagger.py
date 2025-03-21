@@ -108,7 +108,8 @@ def set_new_timestamp(timestamp):
     set_key(dotenv_file, "LAST_SYNC_TS", timestamp)
 
 
-def get_entries_list(base_url, auth_dict, last_timestamp):
+def get_entries_list_first_page(base_url, auth_dict, last_timestamp):
+    """Deprecated, but left for testing the module"""
     params = {
         "sort": "created",
         "order": "asc",
@@ -123,6 +124,65 @@ def get_entries_list(base_url, auth_dict, last_timestamp):
     if resp.status_code == 200:
         unprocessed_entries = resp.json()["_embedded"]["items"]
     return unprocessed_entries
+
+
+def get_entries_generator(base_url, auth_dict, last_timestamp):
+    params = {
+        "sort": "created",
+        "order": "asc",
+        "page": "1",
+        "perPage": "100",
+        "since": last_timestamp,
+    }
+    params.update(auth_dict)
+    next_page_url = f"{base_url}/api/entries"
+    while next_page_url:
+        logger.debug(f"fetching page_url: {next_page_url}")
+        resp = requests.get(next_page_url, params=params)
+        unprocessed_entries = None
+        logger.debug(f"entries response: {resp.status_code}")
+        if resp.status_code != 200:
+            raise Exception(
+                f"entries_generator request returned status code {resp.status_code} ; {resp.json()}"
+            )
+        resp_data = resp.json()
+        unprocessed_entries = resp_data["_embedded"]["items"]
+        current_page = resp_data["page"]
+        total_pages = resp_data["pages"]
+        logger.info(f"yielding page {current_page} of {total_pages}")
+        next_item = resp_data["_links"].get("next", None)
+
+        yield unprocessed_entries
+
+        if next_item:
+            next_page_url = next_item["href"]
+            logger.debug(f"{next_page_url = }")
+        else:
+            next_page_url = None
+            logger.debug("no next page")
+    logger.debug(f"exhausted all {total_pages} pages")
+
+
+def get_and_update_articles(server_url, auth_key, old_ts, reprocess_flag, pattern):
+    successes = 0
+    skips = 0
+    failures = 0
+    total_entries = 0
+
+    for entries_list in get_entries_generator(server_url, auth_key, old_ts):
+        # logger.debug(f"{entries_list = }")
+        logger.info(f"{len(entries_list)} entries found")
+        i_successes, i_skips, i_failures, i_total = process_entries(
+            server_url, auth_key, entries_list, reprocess_flag, pattern
+        )
+        successes += i_successes
+        skips += i_skips
+        failures += i_failures
+        total_entries += i_total
+
+    logger.info(
+        f"Finished processing {total_entries} entries; {successes = }, {failures = }, {skips = }"
+    )
 
 
 def get_entry_tags(entry_tags):
@@ -172,14 +232,18 @@ def update_entry_tags(base_url, auth_dict, entry, tags) -> bool:
 
 def process_entries(base_url, headers, unprocessed_entries, reprocess_flag, re_pattern):
     logger.debug(f"Using regex pattern: '{re_pattern}'")
-    skips = 0
     successes = 0
+    skips = 0
     failures = 0
+    total = 0
     for item in unprocessed_entries:
+        total += 1
         entry_id = item["id"]
         page_content = item["content"]
         tags = get_entry_tags(item["tags"])
 
+        # TODO: change this to check for more than 2 tags - category tags when adding can prevent processing!!
+        # TODO: Add threshold variable in config!
         if not reprocess_flag and tags:
             # entry already has tags, and we're not reprocessing !
             logger.debug(f"{entry_id = } already has {tags = }; skipping")
@@ -199,14 +263,16 @@ def process_entries(base_url, headers, unprocessed_entries, reprocess_flag, re_p
             successes += 1
         else:
             failures += 1
-    logger.info(
-        f"processed {len(unprocessed_entries)} entries; {successes = }, {failures = }, {skips = }"
+    logger.debug(
+        f"processed {len(unprocessed_entries)} entries; {successes = }, {failures = }, {skips = } in iteration"
     )
+    return (successes, skips, failures, total)
 
 
 def main():
     creds, server_url = load_env_vars()
     # noinspection PyArgumentList
+    # TODO: change how these settings are read - sensitive from .env vars, non sensitive from config file
     logger.add(log_path, level=log_level)
     logger.info(f"Added logger @ {log_path} - {log_level = }")
     logger.info(f"{server_url = }")
@@ -216,23 +282,22 @@ def main():
     logger.info(f"old timestamp {old_ts}")
     auth_token = authenticate(server_url, creds)
     auth_key = {"access_token": auth_token}
-    entries_list = []
-    try:
-        entries_list = get_entries_list(server_url, auth_key, old_ts)
-        logger.info(f"{len(entries_list)} entries found")
-        # logger.debug(f"{entries_list = }")
-    except Exception as e:
-        logger.error(f"Exception occurred: {e}")
-    finally:
-        if not entries_list:
-            logger.info("No entries found, exiting...")
-            set_new_timestamp(new_ts)
-            sys.exit(0)
     pattern = get_parsing_pattern()
     reprocess_flag = get_reprocess_flag()
-    process_entries(server_url, auth_key, entries_list, reprocess_flag, pattern)
-    set_new_timestamp(new_ts)
-    logger.info(f"Set new timestamp {new_ts} ; Exiting...")
+    entries_list = []
+    try:
+        get_and_update_articles(
+            server_url, auth_key, entries_list, reprocess_flag, pattern
+        )
+    except Exception as e:
+        # TODO: change above Exception to custom Exception
+        logger.error(f"Exception occurred: {e}")
+    finally:
+        # TODO: remove this in favor of raising new exception and catching above
+        if not entries_list:
+            logger.info("No entries found, exiting...")
+        set_new_timestamp(new_ts)
+        logger.info(f"Set new timestamp {new_ts} ; Exiting...")
 
 
 if __name__ == "__main__":
