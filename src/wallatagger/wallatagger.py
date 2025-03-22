@@ -62,6 +62,34 @@ def authenticate_only(server_base_url=None, credentials=None, load_env=True, doc
         return token
 
 
+def smart_reload_entry(base_url, auth_dict, entry=None, url=None):
+    """Reloads entry using vanilla functionality, but only if
+    the URL doesn't return a 404/403 etc first."""
+    if not (entry or url) or (entry and url):
+        raise Exception("must provide *either* entry *or* url, and *also not* both")
+    # if entry:
+    #   lookup entry to get entry_url
+    # if url:
+    #   check if entry exists first
+    #   Exception if not
+    #   get entry if does
+    # both:
+    # og_artcle = get(url)
+    # if not 200:
+    #   Exception/warning
+    # else (it exists, so reload):
+    #   patch entry
+
+    """if url:
+        params = {"return_id": "1", "url": url}
+        r = requests.get(base_url+"/api/entries/exists", json={**params, **auth_dict})
+        if r.status_code != 200:
+            raise Exception("url not found")
+        entry = r.json()["entry"] # double check this key
+    og_article = requests.get(url)
+    entry -> requests.patch(base_url+f"/api/entries/{entry}/reload")"""
+
+
 def get_new_timestamp():
     now = datetime.now()
     return str(now.timestamp().__floor__())
