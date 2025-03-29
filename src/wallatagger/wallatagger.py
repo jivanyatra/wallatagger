@@ -3,7 +3,16 @@ from datetime import datetime
 
 # noinspection PyPackageRequirements
 from dotenv import find_dotenv, load_dotenv, set_key
+from .exceptions import (
+    EntryGetError,
+    EntryUpdateError,
+    EnvironmentConfigMissingError,
+    NoNewEntries,
+    TOMLConfigMissingError,
+    WallabagAPIError,
+)
 from loguru import logger
+import json
 import os
 import requests
 import sys
@@ -38,19 +47,41 @@ def load_env_vars():
 def load_toml_config(config_file: str = None):
     if not config_file:
         config_file = "config.toml"
+    try:
+        with open(config_file, "r") as f:
+            config = toml.load(f)
+    except Exception as e:
+        raise TOMLConfigMissingError(
+            f"Failed to open TOML config file at {config_file}: {e} "
+        )
+    auth_body = config["authentication"]
+    instance_vars = config["instance"]
+    return auth_body, instance_vars
 
 
-def authenticate(base_url, auth_body):
+def authenticate(base_url, auth_body, refresh=None):
+    # TO DO:
+    # Split into helper funcs
+    # one for initial auth w/user&pass that clears it once we get a refresh token
+    # one for refresh token that asks for user&pass once it expires
+    if refresh:
+        auth_body["grant_type"] = "refresh_token"
+        auth_body["refresh_token"] = refresh
     resp = requests.post(base_url + "/oauth/v2/token", json=auth_body)
     if resp.status_code != 200:
         logger.error(f"Authentication failed...{resp.status_code = } ; {resp.content}")
         sys.exit("Authentication Failed")
-    token = resp.json()["access_token"]
+    access_token = resp.json()["access_token"]
+    if refresh:
+        refresh_token = resp.json()["refresh_token"]
+        return access_token, refresh_token
     logger.debug("Authenticated!")
-    return token
+    return access_token
 
 
-def authenticate_only(server_base_url=None, credentials=None, load_env=True, doc=False):
+def authenticate_only(
+    server_base_url=None, credentials=None, load_env=True, doc=False, refresh=None
+):
     """Returns auth token/headers for CLI usage
     Optionally add a 'doc=True' flag for the string
     you can paste into the wallabag/api/doc page"""
@@ -61,11 +92,15 @@ def authenticate_only(server_base_url=None, credentials=None, load_env=True, doc
             raise Exception("No credentials dict provided!")
         if not server_base_url:
             raise Exception("No base URL for server provided!")
-    token = authenticate(server_base_url, credentials)
+    access_token, refresh_token = authenticate(
+        server_base_url, credentials, refresh=refresh
+    )
     if doc:
-        return f"Bearer {token}"
+        return f"Bearer {access_token}"
+    elif refresh:
+        return access_token, refresh_token
     else:
-        return token
+        return access_token
 
 
 def smart_reload_entry(base_url, auth_dict, entry=None, url=None):
@@ -134,6 +169,21 @@ def get_reprocess_flag():
     elif reprocess not in ["false", "0", "f"]:
         logger.error(f"Could not parse {reprocess = } into a boolean; setting to False")
     return False
+
+
+def get_tagging_rules(base_url, auth_dict):
+    resp = requests.get(base_url + "/api/taggingrule/export", headers=auth_dict)
+    if resp.status_code != 200:
+        raise Exception("failed to get tagging rules")
+
+    rules = json.loads(resp.content)
+    rule_tags = []
+
+    for rule in rules:
+        rule_tags.extend(rule["tags"])
+
+    rule_tags = sorted(list(set(rule_tags)))
+    return rule_tags
 
 
 def set_new_timestamp(timestamp):
