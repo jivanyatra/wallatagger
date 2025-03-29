@@ -11,4 +11,4 @@ last_sync_ts = 1716061696
 reprocess = false
 log_level = "INFO"
 log_path = "wallatagger.log"
-regex = "example\.com\/tags\/(.+?)\/"
+regex = "example\\.com\\/tags\\/(.+?)\\/"
