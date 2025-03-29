@@ -18,4 +18,5 @@ __all__ = [
     "process_entries",
     "set_new_timestamp",
     "update_entry_tags",
+    # add exceptions below
 ]
