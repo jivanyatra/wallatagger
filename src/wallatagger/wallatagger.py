@@ -7,6 +7,7 @@ from loguru import logger
 import os
 import requests
 import sys
+import toml
 
 
 log_level = "INFO"
@@ -32,6 +33,11 @@ def load_env_vars():
         global log_path
         log_path = conf_log_path
     return auth_body, base_url
+
+
+def load_toml_config(config_file: str = None):
+    if not config_file:
+        config_file = "config.toml"
 
 
 def authenticate(base_url, auth_body):
